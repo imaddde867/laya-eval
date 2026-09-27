@@ -55,6 +55,9 @@ def test_report_reads_nested_jevmlx_agreement_and_states_context_limit():
             "common_subset": 1.0,
             "by_workflow": {"wf_a": 2 / 3},
             "by_workflow_counts": {"wf_a": {"n_cases": 2, "n_fields": 3}},
+            "by_workflow_field": {
+                "wf_a": {"urgent": {"agreement": 1.0, "n_cases": 2, "n_fields": 2}}
+            },
         },
         total_unmapped=0,
         jevmlx_agreement={"overall": 0.75, "n_cases": 2, "n_fields": 4},
@@ -69,6 +72,7 @@ def test_report_reads_nested_jevmlx_agreement_and_states_context_limit():
     assert "jevmlx local agreement on the fetched dataset: 0.750 (2 cases, 4 fields)" in report
     assert "TypeSafe cited hosted Jev (private eval; n not reported): 0.678" in report
     assert "wf_a: 0.667 (2 cases, 3 fields)" in report
+    assert "wf_a / urgent: 1.000 (2 cases, 2 fields)" in report
     assert "1,024-token model input limit." in report
     assert "laya-mlx truncates state tokens" in report
     assert "confidence values are not evaluated" in report

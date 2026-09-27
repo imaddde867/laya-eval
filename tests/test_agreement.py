@@ -51,3 +51,26 @@ def test_by_workflow_breakdown():
     ]
     result = score_agreement(cases, predictions)
     assert result["by_workflow"] == {"wf_a": 1.0, "wf_b": 0.0}
+
+
+def test_by_workflow_and_field_breakdown_has_field_and_case_denominators():
+    cases = [
+        _case("c1", "wf_a", {"x": True, "y": "a"}),
+        _case("c2", "wf_a", {"x": False}),
+        _case("c3", "wf_b", {"x": True}),
+    ]
+    predictions = [
+        {"id": "c1", "predictions": {"x": True, "y": "b"}},
+        {"id": "c2", "predictions": {"x": False}},
+        {"id": "c3", "predictions": {"x": False}},
+    ]
+
+    result = score_agreement(cases, predictions)
+
+    assert result["by_workflow_field"] == {
+        "wf_a": {
+            "x": {"agreement": 1.0, "n_cases": 2, "n_fields": 2},
+            "y": {"agreement": 0.0, "n_cases": 1, "n_fields": 1},
+        },
+        "wf_b": {"x": {"agreement": 0.0, "n_cases": 1, "n_fields": 1}},
+    }

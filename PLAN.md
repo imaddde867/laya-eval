@@ -25,5 +25,6 @@ Phase 1: `docs/superpowers/plans/2026-09-27-laya-phase1-agreement.md`.
       needs `TYPESAFE_API_KEY` for the hosted-Jev leg)
 - [ ] Phase 4 — CoRe-relevant task (deferred, own session)
 
-Next step: open a new Claude Code session in this folder (`laya-eval/`),
-read `CONTEXT.md` and the Phase 1 plan, then execute Task 1.
+Next step: plan Phase 2 latency/throughput measurements using the completed
+Phase 1 setup; keep the comparison local and record the measurement protocol
+before collecting timings.
