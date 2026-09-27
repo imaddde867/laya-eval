@@ -22,6 +22,12 @@ def score_agreement(cases: list[dict], predictions: list[dict]) -> dict:
     common_total = 0
     common_correct = 0
     by_workflow_totals: dict[str, list[int]] = defaultdict(lambda: [0, 0])
+    by_workflow_field: dict[str, dict[str, list[int]]] = defaultdict(
+        lambda: defaultdict(lambda: [0, 0])
+    )
+    by_workflow_field_cases: dict[str, dict[str, set[str]]] = defaultdict(
+        lambda: defaultdict(set)
+    )
     case_ids: set[str] = set()
 
     for case in cases:
@@ -39,6 +45,9 @@ def score_agreement(cases: list[dict], predictions: list[dict]) -> dict:
             workflow = str(case.get("workflow"))
             by_workflow_totals[workflow][0] += 1
             by_workflow_totals[workflow][1] += int(is_correct)
+            by_workflow_field[workflow][field][0] += 1
+            by_workflow_field[workflow][field][1] += int(is_correct)
+            by_workflow_field_cases[workflow][field].add(case["id"])
             if field not in ambiguous:
                 common_total += 1
                 common_correct += int(is_correct)
@@ -51,5 +60,16 @@ def score_agreement(cases: list[dict], predictions: list[dict]) -> dict:
         "by_workflow": {
             workflow: (matches / count if count else None)
             for workflow, (count, matches) in by_workflow_totals.items()
+        },
+        "by_workflow_field": {
+            workflow: {
+                field: {
+                    "agreement": matches / count if count else None,
+                    "n_cases": len(by_workflow_field_cases[workflow][field]),
+                    "n_fields": count,
+                }
+                for field, (count, matches) in fields.items()
+            }
+            for workflow, fields in by_workflow_field.items()
         },
     }

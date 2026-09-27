@@ -123,6 +123,13 @@ def format_report(
             f"- {workflow}: {rate:.3f} "
             f"({counts['n_cases']} cases, {counts['n_fields']} fields)"
         )
+    lines.extend(["", "By workflow and field:"])
+    for workflow, fields in sorted(result["by_workflow_field"].items()):
+        for field, stats in sorted(fields.items()):
+            lines.append(
+                f"- {workflow} / {field}: {stats['agreement']:.3f} "
+                f"({stats['n_cases']} cases, {stats['n_fields']} fields)"
+            )
     return "\n".join(lines) + "\n"
 
 
