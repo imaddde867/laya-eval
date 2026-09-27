@@ -56,13 +56,25 @@ first up.
   Visibility and Communication.md` (has the prior Jev post's exact claim
   boundaries and publishing pattern to mirror if this becomes a write-up).
 
+## Correction found after the initial brainstorm (already folded into design.md)
+
+The real TypeSafe public eval is `openjev/benchmarks/typesafe/fetch.py`'s
+output (4 workflows), not the 6 bundled demo presets in
+`openjev/jevmlx/presets/*.json` (those back `jevmlx decide --preset`, a
+different, general-purpose demo — and include `high_cardinality_255`,
+which was wrongly assumed to be part of the eval set). The fetcher's schema
+only ever produces boolean/enum fields, so the multi-select/constraints
+mapping gap doesn't bite on this dataset.
+
 ## Not yet done
 
-- `mapping/schema_mapping.md` is a stub — the actual jevmlx-field-type →
-  laya-primitive table is Phase 1's first real deliverable.
-- `adapters/laya_adapter.py` is a stub.
-- No laya-mlx install/inference has been run yet in this session — verify
-  `pip install laya-mlx` (or the MLX-native package per the HF card) and a
-  sanity `predict()` call before starting Phase 1 proper.
-- `writing-plans` skill has not been run yet for this project — do that
-  next, from `design.md`, before touching Phase 1 code.
+- Phase 1 has a full implementation plan:
+  `docs/superpowers/plans/2026-09-27-laya-phase1-agreement.md` (6 tasks,
+  TDD, bite-sized). Not yet executed — no laya-mlx install, no model run,
+  no fetch has happened yet in this project.
+- `mapping/schema_mapping.md`'s per-workflow table is a stub, filled in by
+  Task 6 of the Phase 1 plan.
+- `adapters/laya_adapter.py` is a stub, built in Task 4.
+- Next action for a new session: read this file + the Phase 1 plan, then
+  start Task 1 (`superpowers:subagent-driven-development` or
+  `superpowers:executing-plans`, per the plan's header).

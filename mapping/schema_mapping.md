@@ -2,6 +2,12 @@
 
 Status: stub. Fill in during Phase 1 while building `adapters/laya_adapter.py`.
 
+Note: the actual Phase 1 dataset (`benchmarks/typesafe/fetch.py`'s output)
+only ever produces `boolean` and `enum` (plain or `ordered`) fields — see
+`benchmarks/typesafe/questions.py:field_schema`. So the "does not map" rows
+below are expected to show ~0% usage on this specific dataset; they matter
+if Phase 4's CoRe task or any other jevmlx preset is used later.
+
 | jevmlx field type | laya primitive | Notes |
 |---|---|---|
 | `enum` (mutually exclusive) | `choice` | Direct mapping when option count is under laya's ~20-option guidance. |
@@ -11,16 +17,15 @@ Status: stub. Fill in during Phase 1 while building `adapters/laya_adapter.py`.
 | `multi-select` | — | Does not map. No laya primitive picks more than one option. Log as unmapped. |
 | constraints (`implies` / `excludes` / `requires_parent`) | — | Does not map. Laya has no cross-field constraint mechanism; each question is scored independently. Log as unmapped. |
 
-## Per-preset comparable-field fraction
+## Per-workflow comparable-field fraction
 
-Fill in once the table above is applied to each of the 5 usable presets
-(`code_security`, `content_moderation`, `fintech_fraud`, `inbound_email`,
-`support_triage` — `high_cardinality_255` excluded, see design.md).
+Fill in once the table above is applied to each of the 4 TypeSafe public-eval
+workflows (`benchmarks/typesafe/fetch.py` output — see design.md's Phase 1
+correction note).
 
-| Preset | Total fields | Comparable | Unmapped | Unmapped reason(s) |
+| Workflow | Total fields | Comparable | Unmapped | Unmapped reason(s) |
 |---|---|---|---|---|
-| code_security | | | | |
-| content_moderation | | | | |
-| fintech_fraud | | | | |
-| inbound_email | | | | |
-| support_triage | | | | |
+| security_incidents | | | | |
+| agent_trace_observability | | | | |
+| invoice_processing | | | | |
+| customer_service | | | | |

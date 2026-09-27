@@ -72,15 +72,43 @@ resulting comparable-field fraction per preset is itself a finding.
 
 ### Phase 1 — Agreement on the public 20 (first, most detail)
 
-- Reuse jevmlx's existing harness: `openjev/benchmarks/typesafe/` (fetch,
-  questions, `official.json` consensus labels) and `openjev/benchmarks/public/`.
-- Build `adapters/laya_adapter.py`: takes a jevmlx preset schema, applies
-  `mapping/schema_mapping.md`, drops unmapped fields (logged per run), calls
-  laya-typed-decisions-mlx's `predict()` per remaining question.
-- Run laya-mlx locally and hosted Jev fresh (`TYPESAFE_API_KEY`, already set)
-  on the 5 usable presets (all but `high_cardinality_255`).
-- Output: per-preset, per-field agreement-with-consensus, reported alongside
-  jevmlx's already-published local numbers and TypeSafe's cited Jev row.
+**Correction from the original brainstorm:** the real TypeSafe public eval
+is not the 6 bundled demo presets (`jevmlx/presets/*.json` — those back
+`jevmlx decide --preset`, a general-purpose demo, and include
+`high_cardinality_255` at 255 choices). The actual public eval is
+`openjev/benchmarks/typesafe/fetch.py`'s output: 4 workflows
+(`security_incidents`, `agent_trace_observability`, `invoice_processing`,
+`customer_service`), each case converted to a record with `schema`
+(boolean/enum fields only, `enum` sometimes `ordered=True` for score
+questions — confirmed via `benchmarks/typesafe/questions.py:field_schema`,
+which never emits multi-select or constraint fields), `context`, `labels`
+(consensus label), and `meta.consensus`/`margin`/`ambiguous`. This is what
+`jevmlx bench` itself fetches. Consequence: the schema-mapping "does not
+map" concern (multi-select, constraints) doesn't bite on this dataset —
+expect it to show 0% unmapped, not an open question, since this data only
+ever has the three field shapes laya already covers.
+
+- Fetch: `python -m benchmarks.typesafe.fetch --out cases.jsonl` from
+  within `openjev/` (its own venv), producing `cases.jsonl` +
+  `dataset.lock.json`. Nothing from TypeSafe gets committed to
+  `laya-eval/`; the fetch's own cache
+  (`~/.cache/jevmlx/typesafe/`) is offline-reusable.
+- Build `adapters/laya_adapter.py`: per case record, map each schema field
+  via `mapping/schema_mapping.md` (boolean→noul, enum→choice,
+  `ordered`-enum→score), call laya-typed-decisions-mlx's `predict()`.
+- Score with a small purpose-built scorer in `laya-eval` (predicted label
+  vs. the fetcher's consensus `labels` value, plus a common-subset rate
+  excluding `meta.ambiguous` fields) — not jevmlx's internal
+  `evalmetrics.typesafe_agreement`, which expects jevmlx's own per-field
+  "line" format from its eval pipeline; coupling to that internal shape
+  isn't worth it for an independent comparison.
+- For the vs-jevmlx-on-M4 comparison: run jevmlx's own `jevmlx eval` /
+  `jevmlx report` CLI (already built, unmodified) on the same
+  `cases.jsonl`, so both models are scored on identical cases and the
+  jevmlx number is jevmlx's own reported metric, not a reimplementation.
+- Output: per-workflow, per-field agreement-with-consensus for laya, next
+  to jevmlx's own local report and TypeSafe's cited Jev row
+  (`openjev/benchmarks/typesafe/official.json`).
 
 ### Phase 2 — Latency/throughput on the M4
 
