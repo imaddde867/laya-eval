@@ -25,7 +25,7 @@ correction note).
 
 | Workflow | Total fields | Comparable | Unmapped | Unmapped reason(s) |
 |---|---|---|---|---|
-| security_incidents | | | | |
-| agent_trace_observability | | | | |
-| invoice_processing | | | | |
-| customer_service | | | | |
+| security_incidents | 37 | 37 | 0 | None; boolean and enum fields only. |
+| agent_trace_observability | 52 | 52 | 0 | None; boolean and enum fields only. |
+| invoice_processing | 184 | 184 | 0 | None; boolean and enum fields only. |
+| customer_service | 92 | 92 | 0 | None; boolean and enum fields only. |

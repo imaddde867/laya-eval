@@ -29,6 +29,11 @@ class LayaAdapter:
 
         self._agent = laya.load(model_id, dtype="float16")
 
+    @property
+    def max_input_tokens(self) -> int:
+        """Return the loaded checkpoint's token limit."""
+        return int(self._agent.cfg["max_len"])
+
     def predict_case(self, case: dict) -> dict:
         from mapping.map_schema import map_schema
 
