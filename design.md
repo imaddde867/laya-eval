@@ -26,15 +26,22 @@ Not used:
   round (see brainstorm). Revisit only if Phase 4's CoRe task needs
   non-English input (e.g. Finnish, TEHAA-shaped).
 
-## Token budget (checked before committing to this design)
+## Token budget
 
-jevmlx's 6 bundled presets (`openjev/jevmlx/presets/*.json`) have context
-strings of 600–1300 characters (~150–350 tokens) — comfortably inside laya's
-1024-token window even with schema/question text appended per call.
+For Phase 2, jevmlx's 6 bundled presets (`openjev/jevmlx/presets/*.json`)
+have context strings of 600–1300 characters (~150–350 tokens), comfortably
+inside laya's 1024-token window even with schema/question text appended per
+call.
+
+Phase 1 uses fetched TypeSafe public cases, whose contexts include records up
+to 34,166 characters. The typed-decisions checkpoint has a 1024-token input
+limit. `laya-mlx` truncates state tokens to fit after the question and option
+prefix, so long cases are not evaluated with their full context. The Phase 1
+report states this limitation.
 
 Exception: `high_cardinality_255` (a 255-choice enum, jevmlx's own "latency
 scaling demo"). Laya's docs recommend `choice` under ~20 options. This
-preset is **excluded** from the laya run and logged as a documented
+preset is **excluded** from the Phase 2 laya run and logged as a documented
 limitation, not silently dropped.
 
 ## Schema mapping
@@ -49,14 +56,14 @@ Laya primitives: `choice` (categorical), `score` (ordinal), `noul`
 Mapping table lives at `mapping/schema_mapping.md`, with an explicit
 "does not map" column. Multi-select and inter-field constraints have no
 laya equivalent — they get logged as unmapped, not approximated. The
-resulting comparable-field fraction per preset is itself a finding.
+resulting comparable-field fraction per workflow is itself a finding.
 
 ## Vocabulary discipline (carried from `jev-position-test`)
 
-- Public-20 result = **agreement with the GPT-6 Astra + Claude Fable 5.1
-  consensus label**, never "accuracy." TypeSafe's cited leaderboard numbers
-  are on a private eval; ours are on the 20 public cases — indicative, not
-  the same test.
+- Phase 1 result = **agreement with the GPT-6 Astra + Claude Fable 5.1
+  consensus label**, never "accuracy." The current fetch contains 45 public
+  cases; TypeSafe's cited leaderboard number is from its private eval —
+  indicative, not the same test.
 - Local laya-mlx latency vs. hosted Jev latency is **not a valid
   comparison** (local forward pass vs. network API round-trip). Only
   laya-mlx vs. jevmlx, both local on the same M4, is a fair latency
@@ -70,7 +77,7 @@ resulting comparable-field fraction per preset is itself a finding.
 
 ## Phases
 
-### Phase 1 — Agreement on the public 20 (first, most detail)
+### Phase 1 — Agreement on the fetched public eval (first, most detail)
 
 **Correction from the original brainstorm:** the real TypeSafe public eval
 is not the 6 bundled demo presets (`jevmlx/presets/*.json` — those back
@@ -154,9 +161,8 @@ laya-eval/
 
 ## Open items carried into the plan
 
-- `TYPESAFE_API_KEY` must already be set in the shell (user confirmed it
-  is); scripts check `os.environ` and fail clearly if missing, never print
-  it.
+- `TYPESAFE_API_KEY` is needed for Phase 3's fresh hosted-Jev calls. Phase 1
+  uses the cited `official.json` row and does not need the key.
 - `second-brain` MCP server is scoped to this project directory only, not
   the actual vault — any future vault reads must use plain filesystem
   tools (Read/Bash) against `/Users/imadeddine/Documents/2ndBrain`.

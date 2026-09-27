@@ -8,13 +8,13 @@ Claude Code session started in this folder.
 Evaluating `convaiinnovations/laya` (via `aac6fef/laya-typed-decisions-mlx`,
 local on an M4 MacBook Pro) against TypeSafe's hosted `Jev` and against the
 local jevmlx Jev-clone already built in the sibling `openjev/` repo. Staged
-in 4 phases (see `design.md`); Phase 1 (agreement on the public 20) is
+in 4 phases (see `design.md`); Phase 1 (agreement on the fetched public eval) is
 first up.
 
 ## Sibling repos (read-only references, do not modify)
 
 - `../openjev/` — jevmlx: local Jev clone (MLX, Qwen backbones). Has the
-  benchmark harness this project reuses: `benchmarks/typesafe/` (public-20
+  benchmark harness this project reuses: `benchmarks/typesafe/` (public eval
   fetch + consensus labels via `official.json`), `benchmarks/public/`,
   and `jevmlx/presets/*.json` (6 bundled schemas — `high_cardinality_255`
   is excluded from the laya run, see design.md).
@@ -31,7 +31,8 @@ first up.
 - `high_cardinality_255` preset excluded from laya runs (255 choices vs.
   laya's ~20-option guidance for `choice`).
 - Vocabulary: "agreement with consensus," never "accuracy," for the
-  public-20. Local-vs-local latency only; local-vs-hosted latency is cited,
+  public TypeSafe cases. Local-vs-local latency only; local-vs-hosted latency
+  is cited,
   never compared numerically.
 - Multi-select and inter-field constraints (implies/excludes/
   requires_parent) don't map to laya's primitives — logged as unmapped in
@@ -39,10 +40,10 @@ first up.
 
 ## Environment notes
 
-- `TYPESAFE_API_KEY` needed for hosted-Jev calls in Phases 1 and 3. User
-  confirmed it's already set in the shell. Scripts must check
-  `os.environ` and fail with a clear message if absent — never print the
-  key.
+- `TYPESAFE_API_KEY` is needed for hosted-Jev calls in Phase 3, not Phase 1
+  (which cites `openjev/benchmarks/typesafe/official.json`). Phase 3 scripts
+  must check `os.environ` and fail with a clear message if absent; never print
+  the key.
 - Apple Silicon / MLX required for laya-typed-decisions-mlx and jevmlx
   local runs (M4 MacBook Pro, macOS 14+, Python 3.11+/3.12+ per jevmlx's
   own requirement).
@@ -66,15 +67,13 @@ which was wrongly assumed to be part of the eval set). The fetcher's schema
 only ever produces boolean/enum fields, so the multi-select/constraints
 mapping gap doesn't bite on this dataset.
 
-## Not yet done
+## Current status
 
-- Phase 1 has a full implementation plan:
-  `docs/superpowers/plans/2026-09-27-laya-phase1-agreement.md` (6 tasks,
-  TDD, bite-sized). Not yet executed — no laya-mlx install, no model run,
-  no fetch has happened yet in this project.
-- `mapping/schema_mapping.md`'s per-workflow table is a stub, filled in by
-  Task 6 of the Phase 1 plan.
-- `adapters/laya_adapter.py` is a stub, built in Task 4.
-- Next action for a new session: read this file + the Phase 1 plan, then
-  start Task 1 (`superpowers:subagent-driven-development` or
-  `superpowers:executing-plans`, per the plan's header).
+- Phase 1 is complete. The six-task implementation plan is
+  `docs/superpowers/plans/2026-09-27-laya-phase1-agreement.md`; status and
+  reported results are in `PLAN.md`.
+- The generated prediction and report artifacts are gitignored under
+  `results/laya_phase1/`; the TypeSafe cases remain in
+  `~/.cache/jevmlx/typesafe/cases.jsonl`.
+- Phases 2–4 remain unplanned. Phase 2 is next; use the design and claim
+  boundaries in `design.md` before planning it.
