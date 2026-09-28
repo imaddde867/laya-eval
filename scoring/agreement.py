@@ -6,7 +6,7 @@ see design.md.
 
 from __future__ import annotations
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 
 def score_agreement(cases: list[dict], predictions: list[dict]) -> dict:
@@ -71,5 +71,50 @@ def score_agreement(cases: list[dict], predictions: list[dict]) -> dict:
                 for field, (count, matches) in fields.items()
             }
             for workflow, fields in by_workflow_field.items()
+        },
+    }
+
+
+def majority_baseline(cases: list[dict]) -> dict:
+    """Leave-one-out majority-label baseline: for each case's field, guess the
+    mode of every *other* case's label for that field.
+
+    Fit-on-the-same-sample majority guessing is leaky (it would score any
+    strict-majority field at 100%); leave-one-out avoids that specific leak,
+    but still overstates a true held-out baseline at this sample size
+    (44-45 cases), since dropping one case barely moves a field's mode.
+    Report this number as a floor to compare model scores against, not as an
+    unbiased estimate of guessing performance on unseen data.
+    """
+    labels_by_field: dict[str, list[tuple[str, object]]] = defaultdict(list)
+    case_workflow: dict[str, str] = {}
+    for case in cases:
+        case_workflow[case["id"]] = str(case.get("workflow"))
+        for field, label in case.get("labels", {}).items():
+            labels_by_field[field].append((case["id"], label))
+
+    total = 0
+    correct = 0
+    by_workflow_totals: dict[str, list[int]] = defaultdict(lambda: [0, 0])
+
+    for entries in labels_by_field.values():
+        if len(entries) < 2:
+            continue
+        for case_id, label in entries:
+            others = [lbl for cid, lbl in entries if cid != case_id]
+            guess = Counter(others).most_common(1)[0][0]
+            is_correct = guess == label
+            total += 1
+            correct += int(is_correct)
+            workflow = case_workflow.get(case_id, "unknown")
+            by_workflow_totals[workflow][0] += 1
+            by_workflow_totals[workflow][1] += int(is_correct)
+
+    return {
+        "overall": (correct / total) if total else None,
+        "n_fields": total,
+        "by_workflow": {
+            workflow: (matches / count if count else None)
+            for workflow, (count, matches) in by_workflow_totals.items()
         },
     }
