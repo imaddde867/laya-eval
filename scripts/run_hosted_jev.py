@@ -85,17 +85,16 @@ def parse_jev_result(raw: dict) -> dict[str, object]:
     return predictions
 
 
-def main() -> None:
-    sys.path.insert(0, str(ROOT))
-    from mapping.map_schema import map_schema
-
-    api_key = load_api_key()
-    cases = [json.loads(line) for line in CACHE.read_text(encoding="utf-8").splitlines() if line]
-
-    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-    predictions_path = RESULTS_DIR / "predictions.jsonl"
+def run(cases, results_dir, api_key, map_schema, call_jev, lock_sha: str) -> int:
+    """Publish predictions and their dataset digest only after every case succeeds."""
+    results_dir.mkdir(parents=True, exist_ok=True)
+    predictions_path = results_dir / "predictions.jsonl"
+    tmp_path = results_dir / "predictions.jsonl.tmp"
+    sidecar_path = results_dir / "dataset_lock_sha256.txt"
+    predictions_path.unlink(missing_ok=True)
+    sidecar_path.unlink(missing_ok=True)
     errors = []
-    with predictions_path.open("w", encoding="utf-8") as handle:
+    with tmp_path.open("w", encoding="utf-8") as handle:
         for i, case in enumerate(cases, 1):
             questions, unmapped = map_schema(case["schema"])
             predictions: dict = {}
@@ -119,15 +118,28 @@ def main() -> None:
             time.sleep(0.3)
 
     if errors:
-        (RESULTS_DIR / "errors.json").write_text(json.dumps(errors, indent=2), encoding="utf-8")
-        print(f"{len(errors)} case(s) failed; see {RESULTS_DIR / 'errors.json'}", file=sys.stderr)
-    else:
-        lock_path = Path.home() / ".cache" / "jevmlx" / "typesafe" / "dataset.lock.json"
-        (RESULTS_DIR / "dataset_lock_sha256.txt").write_text(
-            hashlib.sha256(lock_path.read_bytes()).hexdigest(), encoding="utf-8"
-        )
+        errors_path = results_dir / "errors.json"
+        errors_path.write_text(json.dumps(errors, indent=2), encoding="utf-8")
+        tmp_path.unlink()
+        print(f"{len(errors)} case(s) failed; see {errors_path}", file=sys.stderr)
+        return 1
 
+    (results_dir / "errors.json").unlink(missing_ok=True)
+    tmp_path.replace(predictions_path)
+    sidecar_path.write_text(lock_sha, encoding="utf-8")
     print(f"wrote {predictions_path}")
+    return 0
+
+
+def main() -> None:
+    sys.path.insert(0, str(ROOT))
+    from mapping.map_schema import map_schema
+
+    api_key = load_api_key()
+    cases = [json.loads(line) for line in CACHE.read_text(encoding="utf-8").splitlines() if line]
+    lock_path = Path.home() / ".cache" / "jevmlx" / "typesafe" / "dataset.lock.json"
+    lock_sha = hashlib.sha256(lock_path.read_bytes()).hexdigest()
+    sys.exit(run(cases, RESULTS_DIR, api_key, map_schema, call_jev, lock_sha))
 
 
 if __name__ == "__main__":
