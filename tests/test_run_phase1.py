@@ -1,8 +1,42 @@
 import sys
+import hashlib
+import json
 from pathlib import Path
 import pytest
 
-from scripts.run_phase1 import assert_dataset_identity, ensure_project_root_on_path, format_report, sample_counts
+from scripts.run_phase1 import (
+    assert_dataset_identity, ensure_project_root_on_path, format_report,
+    load_verified_cases, read_jevmlx_manifest, sample_counts,
+)
+
+
+def test_read_jevmlx_manifest_rejects_missing_provenance(tmp_path):
+    report = tmp_path / "report.json"
+    report.write_text("{}")
+    with pytest.raises(SystemExit, match="manifest"):
+        read_jevmlx_manifest(report, tmp_path / "manifest.json")
+
+
+def test_load_verified_cases_rejects_cache_modified_without_lock(tmp_path):
+    cases_path = tmp_path / "cases.jsonl"
+    lock_path = tmp_path / "dataset.lock.json"
+    original = b'{"id":"c1"}\n'
+    cases_path.write_bytes(original)
+    lock_path.write_text(json.dumps({"cases_sha256": hashlib.sha256(original).hexdigest()}))
+    cases_path.write_bytes(b'{"id":"changed"}\n')
+    with pytest.raises(SystemExit, match="cases.jsonl"):
+        load_verified_cases(cases_path, lock_path)
+
+
+def test_load_verified_cases_returns_verified_cases_and_lock_digest(tmp_path):
+    cases_path = tmp_path / "cases.jsonl"
+    lock_path = tmp_path / "dataset.lock.json"
+    raw = b'{"id":"c1"}\n'
+    cases_path.write_bytes(raw)
+    lock_path.write_text(json.dumps({"cases_sha256": hashlib.sha256(raw).hexdigest()}))
+    cases, lock_sha = load_verified_cases(cases_path, lock_path)
+    assert cases == [{"id": "c1"}]
+    assert lock_sha == hashlib.sha256(lock_path.read_bytes()).hexdigest()
 
 
 def test_assert_dataset_identity_accepts_matching_artifacts():

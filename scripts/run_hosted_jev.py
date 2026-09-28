@@ -13,7 +13,6 @@ Never prints the key. Costs real API calls against your TypeSafe account.
 from __future__ import annotations
 
 import json
-import hashlib
 import sys
 import time
 import urllib.error
@@ -102,7 +101,10 @@ def run(cases, results_dir, api_key, map_schema, call_jev, lock_sha: str) -> int
                 try:
                     raw = call_jev(api_key, case["context"], questions)
                     predictions = parse_jev_result(raw)
-                except (urllib.error.HTTPError, urllib.error.URLError) as exc:
+                    missing = set(questions) - set(predictions)
+                    if missing:
+                        raise ValueError(f"missing answers for {sorted(missing)}")
+                except (urllib.error.HTTPError, urllib.error.URLError, ValueError) as exc:
                     errors.append({"id": case["id"], "error": str(exc)})
                     print(f"[{i}/{len(cases)}] ERROR {case['id']}: {exc}", file=sys.stderr)
                     time.sleep(0.3)
@@ -134,11 +136,11 @@ def run(cases, results_dir, api_key, map_schema, call_jev, lock_sha: str) -> int
 def main() -> None:
     sys.path.insert(0, str(ROOT))
     from mapping.map_schema import map_schema
+    from scripts.run_phase1 import load_verified_cases
 
     api_key = load_api_key()
-    cases = [json.loads(line) for line in CACHE.read_text(encoding="utf-8").splitlines() if line]
     lock_path = Path.home() / ".cache" / "jevmlx" / "typesafe" / "dataset.lock.json"
-    lock_sha = hashlib.sha256(lock_path.read_bytes()).hexdigest()
+    cases, lock_sha = load_verified_cases(CACHE, lock_path)
     sys.exit(run(cases, RESULTS_DIR, api_key, map_schema, call_jev, lock_sha))
 
 
