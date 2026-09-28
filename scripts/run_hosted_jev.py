@@ -13,6 +13,7 @@ Never prints the key. Costs real API calls against your TypeSafe account.
 from __future__ import annotations
 
 import json
+import hashlib
 import sys
 import time
 import urllib.error
@@ -120,6 +121,11 @@ def main() -> None:
     if errors:
         (RESULTS_DIR / "errors.json").write_text(json.dumps(errors, indent=2), encoding="utf-8")
         print(f"{len(errors)} case(s) failed; see {RESULTS_DIR / 'errors.json'}", file=sys.stderr)
+    else:
+        lock_path = Path.home() / ".cache" / "jevmlx" / "typesafe" / "dataset.lock.json"
+        (RESULTS_DIR / "dataset_lock_sha256.txt").write_text(
+            hashlib.sha256(lock_path.read_bytes()).hexdigest(), encoding="utf-8"
+        )
 
     print(f"wrote {predictions_path}")
 

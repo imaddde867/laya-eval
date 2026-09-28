@@ -1,7 +1,26 @@
 import sys
 from pathlib import Path
+import pytest
 
-from scripts.run_phase1 import ensure_project_root_on_path, format_report, sample_counts
+from scripts.run_phase1 import assert_dataset_identity, ensure_project_root_on_path, format_report, sample_counts
+
+
+def test_assert_dataset_identity_accepts_matching_artifacts():
+    assert_dataset_identity({"dataset_lock_sha256": "abc"}, "abc", "abc")
+
+
+def test_assert_dataset_identity_rejects_stale_jevmlx():
+    with pytest.raises(SystemExit, match="jevmlx_baseline"):
+        assert_dataset_identity({"dataset_lock_sha256": "stale"}, "abc", "abc")
+
+
+def test_assert_dataset_identity_rejects_stale_hosted_jev():
+    with pytest.raises(SystemExit, match="hosted_jev"):
+        assert_dataset_identity({"dataset_lock_sha256": "abc"}, "stale", "abc")
+
+
+def test_assert_dataset_identity_accepts_absent_optional_artifacts():
+    assert_dataset_identity(None, None, "abc")
 
 
 def test_direct_script_bootstrap_adds_project_root(monkeypatch):

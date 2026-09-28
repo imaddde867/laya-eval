@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -13,6 +14,9 @@ JEVMLX_REPORT = Path(__file__).parent.parent / "results" / "jevmlx_baseline" / "
 HOSTED_JEV_PREDICTIONS = (
     Path(__file__).parent.parent / "results" / "hosted_jev" / "predictions.jsonl"
 )
+LOCK_FILE = Path.home() / ".cache" / "jevmlx" / "typesafe" / "dataset.lock.json"
+JEVMLX_MANIFEST = Path(__file__).parent.parent / "results" / "jevmlx_baseline" / "manifest.json"
+HOSTED_JEV_LOCK_SHA = Path(__file__).parent.parent / "results" / "hosted_jev" / "dataset_lock_sha256.txt"
 OFFICIAL = (
     Path(__file__).parent.parent.parent
     / "openjev"
@@ -20,6 +24,26 @@ OFFICIAL = (
     / "typesafe"
     / "official.json"
 )
+
+
+def current_cases_sha256() -> str:
+    """Return the case digest recorded in the current TypeSafe cache lock."""
+    return json.loads(LOCK_FILE.read_text(encoding="utf-8"))["cases_sha256"]
+
+
+def _lock_file_sha256() -> str:
+    """Hash the whole lock file, as the jevmlx manifest does."""
+    return hashlib.sha256(LOCK_FILE.read_bytes()).hexdigest()
+
+
+def assert_dataset_identity(
+    jevmlx_manifest: dict | None, hosted_jev_sha: str | None, current_sha: str
+) -> None:
+    """Reject artifacts tied to a different dataset lock."""
+    if jevmlx_manifest is not None and jevmlx_manifest.get("dataset_lock_sha256") != current_sha:
+        sys.exit("results/jevmlx_baseline: dataset lock mismatch; rerun against the current cache")
+    if hosted_jev_sha is not None and hosted_jev_sha != current_sha:
+        sys.exit("results/hosted_jev: dataset lock mismatch; rerun against the current cache")
 
 
 def ensure_project_root_on_path() -> None:
@@ -193,6 +217,12 @@ def main() -> None:
         for line in CACHE.read_text(encoding="utf-8").splitlines()
         if line
     ]
+    current_sha = _lock_file_sha256()
+    jevmlx_manifest = json.loads(JEVMLX_MANIFEST.read_text(encoding="utf-8")) if JEVMLX_MANIFEST.exists() else None
+    hosted_jev_sha = HOSTED_JEV_LOCK_SHA.read_text(encoding="utf-8").strip() if HOSTED_JEV_LOCK_SHA.exists() else None
+    if HOSTED_JEV_PREDICTIONS.exists() and hosted_jev_sha is None:
+        sys.exit("results/hosted_jev: missing dataset lock digest; rerun hosted Jev")
+    assert_dataset_identity(jevmlx_manifest, hosted_jev_sha, current_sha)
 
     adapter = LayaAdapter()
     predictions = [adapter.predict_case(case) for case in cases]
