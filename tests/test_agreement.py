@@ -1,4 +1,4 @@
-from scoring.agreement import score_agreement
+from scoring.agreement import majority_baseline, score_agreement
 
 
 def _case(id_, workflow, labels, ambiguous=None):
@@ -74,3 +74,16 @@ def test_by_workflow_and_field_breakdown_has_field_and_case_denominators():
         },
         "wf_b": {"x": {"agreement": 0.0, "n_cases": 1, "n_fields": 1}},
     }
+
+
+def test_majority_baseline_keeps_workflow_priors_separate():
+    cases = [
+        _case(f"a{i}", "wf_a", {"status": "open"}) for i in range(4)
+    ] + [_case("a4", "wf_a", {"status": "closed"})] + [
+        _case(f"b{i}", "wf_b", {"status": "closed"}) for i in range(4)
+    ] + [_case("b4", "wf_b", {"status": "open"})]
+
+    result = majority_baseline(cases)
+
+    assert result["overall"] == 0.8
+    assert result["by_workflow"] == {"wf_a": 0.8, "wf_b": 0.8}

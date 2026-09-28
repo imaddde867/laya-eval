@@ -86,18 +86,19 @@ def majority_baseline(cases: list[dict]) -> dict:
     Report this number as a floor to compare model scores against, not as an
     unbiased estimate of guessing performance on unseen data.
     """
-    labels_by_field: dict[str, list[tuple[str, object]]] = defaultdict(list)
+    labels_by_key: dict[tuple[str, str], list[tuple[str, object]]] = defaultdict(list)
     case_workflow: dict[str, str] = {}
     for case in cases:
-        case_workflow[case["id"]] = str(case.get("workflow"))
+        workflow = str(case.get("workflow"))
+        case_workflow[case["id"]] = workflow
         for field, label in case.get("labels", {}).items():
-            labels_by_field[field].append((case["id"], label))
+            labels_by_key[(workflow, field)].append((case["id"], label))
 
     total = 0
     correct = 0
     by_workflow_totals: dict[str, list[int]] = defaultdict(lambda: [0, 0])
 
-    for entries in labels_by_field.values():
+    for entries in labels_by_key.values():
         if len(entries) < 2:
             continue
         for case_id, label in entries:
