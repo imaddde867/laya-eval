@@ -75,5 +75,14 @@ mapping gap doesn't bite on this dataset.
 - The generated prediction and report artifacts are gitignored under
   `results/laya_phase1/`; the TypeSafe cases remain in
   `~/.cache/jevmlx/typesafe/cases.jsonl`.
-- Phases 2–4 remain unplanned. Phase 2 is next; use the design and claim
-  boundaries in `design.md` before planning it.
+- Phase 1 review fixes are merged to `main` (PR #2). Headline numbers
+  (agreement with consensus): hosted Jev 0.822, jevmlx 0.753, leave-one-out
+  majority baseline 0.725, Laya 0.542 (below baseline under every weighting).
+- Phase 3 Laya `choice` probe is done (`scripts/run_position_laya.py`, branch
+  `feat/position-laya-probe`): 6 messages x 3 orders x 2 passes, 2 of 6
+  answers changed with option order when descriptions were kept, 0 of 6 when
+  blanked. Exploratory (n=6, no ground truth); raw records gitignored under
+  `results/position_laya/`. Hosted Jev (2026-10-03 rerun): 0 of 6 changed.
+  Phase 3 is done; see `PLAN.md`.
+- Phase 2 (latency/throughput) and Phase 4 remain unplanned. Use the design
+  and claim boundaries in `design.md` before planning Phase 2.
