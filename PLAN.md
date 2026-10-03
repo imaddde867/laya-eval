@@ -91,6 +91,16 @@ Phase 1: `docs/superpowers/plans/2026-09-27-laya-phase1-agreement.md`.
 - [ ] Phase 3 — Option-order robustness (repeat jev-position-test method;
       hosted-Jev leg now unblocked — same `TYPESAFE_API_KEY` already in
       use for the Phase 1 hosted run, `.env` at repo root, gitignored)
+  - Laya `choice` probe done (2026-10-03, `scripts/run_position_laya.py`,
+    6 messages x 3 orders x 2 passes): 2 of 6 flipped with descriptions
+    kept, 0 of 6 with descriptions blanked — but blank also degraded
+    answers (smalltalk/sensor messages collapse to "medium"). Recency
+    tilt with descriptions: last-listed option gained in 11/12 pairs
+    (+0.074 avg). Probe only (n=6, no ground truth); records gitignored
+    under `results/position_laya/`.
+  - Open question resolved: fetched TypeSafe schemas carry no per-option
+    descriptions (all enum `choices` are plain string lists in 45/45
+    cases), so Phase 1's blanked representation did not handicap Laya.
 - [ ] Phase 4 — CoRe-relevant task (deferred, own session)
 
 Next step: Phase 2 — latency/throughput on the M4, laya-mlx vs. jevmlx,
