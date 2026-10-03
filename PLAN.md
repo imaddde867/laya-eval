@@ -98,9 +98,13 @@ Phase 1: `docs/superpowers/plans/2026-09-27-laya-phase1-agreement.md`.
     tilt with descriptions: last-listed option gained in 11/12 pairs
     (+0.074 avg). Probe only (n=6, no ground truth); records gitignored
     under `results/position_laya/`.
-  - Open question resolved: fetched TypeSafe schemas carry no per-option
-    descriptions (all enum `choices` are plain string lists in 45/45
-    cases), so Phase 1's blanked representation did not handicap Laya.
+  - Open question resolved (checked 2026-10-03,
+    `scripts/check_enum_descriptions.py`): fetched TypeSafe schemas carry no
+    per-option descriptions (all 135 enum fields, in the 44 cases that have
+    a schema, use plain string `choices`; no other per-option keys). The 27
+    ordered enums put their scale text in the field description, which
+    `map_schema` passes through as `instructions`. So Phase 1's blanked
+    representation did not handicap Laya.
 - [ ] Phase 4 — CoRe-relevant task (deferred, own session)
 
 Next step: Phase 2 — latency/throughput on the M4, laya-mlx vs. jevmlx,
