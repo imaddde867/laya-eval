@@ -57,16 +57,27 @@ Phase 1: `docs/superpowers/plans/2026-09-27-laya-phase1-agreement.md`.
       leaderboard number. Also added a leave-one-out majority-label
       baseline (`scoring.agreement.majority_baseline`) to every report.
       Updated headline: laya 0.542, jevmlx-local 0.753, **our hosted-Jev
-      run 0.827** (vs. TypeSafe's cited 0.678 — kept for reference only),
+      run 0.822 on the normalized laya-eval/jevmlx question representation**
+      (`mapping/map_schema.py` folds score-level text into field
+      descriptions and blanks choice-option descriptions to keep laya,
+      jevmlx, and hosted Jev on one common schema; this is not a native
+      replay of TypeSafe's own question format) (vs. TypeSafe's cited
+      0.678 — kept for reference only),
       **leave-one-out majority baseline 0.725**. Since invoice_processing's
       184 fields (5 cases) dominate a pooled-field total, re-ran all four
       numbers under case-weighted averaging and with invoice_processing
       excluded (2026-09-28) to check which comparisons hold up:
-  - **Laya vs. baseline: robustly below it** in every lens tried
-    (-0.183 pooled, -0.097 case-weighted, -0.098 invoice-excluded). Not
-    sensitive to weighting — a real, settled deficit.
-  - **Hosted Jev vs. baseline: robustly above it**, margin growing once
-    invoice_processing's inflation is removed (+0.102, +0.177, +0.256).
+  - **Laya vs. baseline: below it under every weighting tried**
+    (-0.183 pooled, -0.097 case-weighted, -0.098 invoice-excluded). The sign
+    is stable across weightings, but this leave-one-out (LOO) baseline is a
+    heuristic fit on the same sample: a descriptive comparison, not an
+    estimate of performance on unseen data. No confidence interval or
+    group-safe holdout has been computed; treat this as suggestive.
+  - **Hosted Jev vs. baseline: above it under every weighting tried**,
+    margin growing once invoice_processing's inflation is removed (+0.097,
+    +0.170, +0.245). The same LOO-baseline caveat applies. These values
+    reflect the 2026-09-28 rerun recorded in `results/repro_receipt.json`;
+    hosted predictions varied slightly from the earlier 0.827 run.
   - **jevmlx-local vs. baseline: sign-flips** (+0.028 pooled, -0.019
     case-weighted, +0.073 invoice-excluded) — not a settled result at
     n=44-45; report as inconclusive, not as "jevmlx beats guessing."

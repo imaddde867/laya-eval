@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -13,6 +14,9 @@ JEVMLX_REPORT = Path(__file__).parent.parent / "results" / "jevmlx_baseline" / "
 HOSTED_JEV_PREDICTIONS = (
     Path(__file__).parent.parent / "results" / "hosted_jev" / "predictions.jsonl"
 )
+LOCK_FILE = Path.home() / ".cache" / "jevmlx" / "typesafe" / "dataset.lock.json"
+JEVMLX_MANIFEST = Path(__file__).parent.parent / "results" / "jevmlx_baseline" / "manifest.json"
+HOSTED_JEV_LOCK_SHA = Path(__file__).parent.parent / "results" / "hosted_jev" / "dataset_lock_sha256.txt"
 OFFICIAL = (
     Path(__file__).parent.parent.parent
     / "openjev"
@@ -20,6 +24,38 @@ OFFICIAL = (
     / "typesafe"
     / "official.json"
 )
+
+
+def current_cases_sha256() -> str:
+    """Return the case digest recorded in the current TypeSafe cache lock."""
+    return json.loads(LOCK_FILE.read_text(encoding="utf-8"))["cases_sha256"]
+
+
+def load_verified_cases(cases_path: Path, lock_path: Path) -> tuple[list[dict], str]:
+    """Read cases once and verify those exact bytes against the dataset lock."""
+    cases_bytes = cases_path.read_bytes()
+    lock_bytes = lock_path.read_bytes()
+    expected_sha = json.loads(lock_bytes)["cases_sha256"]
+    if hashlib.sha256(cases_bytes).hexdigest() != expected_sha:
+        sys.exit("cases.jsonl: content does not match dataset.lock.json; refresh the cache")
+    return [json.loads(line) for line in cases_bytes.splitlines() if line], hashlib.sha256(lock_bytes).hexdigest()
+
+
+def read_jevmlx_manifest(report_path: Path, manifest_path: Path) -> dict | None:
+    """Require provenance whenever the jevmlx report will be consumed."""
+    if report_path.exists() and not manifest_path.exists():
+        sys.exit("results/jevmlx_baseline: manifest missing for report; rerun the baseline")
+    return json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else None
+
+
+def assert_dataset_identity(
+    jevmlx_manifest: dict | None, hosted_jev_sha: str | None, current_sha: str
+) -> None:
+    """Reject artifacts tied to a different dataset lock."""
+    if jevmlx_manifest is not None and jevmlx_manifest.get("dataset_lock_sha256") != current_sha:
+        sys.exit("results/jevmlx_baseline: dataset lock mismatch; rerun against the current cache")
+    if hosted_jev_sha is not None and hosted_jev_sha != current_sha:
+        sys.exit("results/hosted_jev: dataset lock mismatch; rerun against the current cache")
 
 
 def ensure_project_root_on_path() -> None:
@@ -188,11 +224,12 @@ def main() -> None:
     from adapters.laya_adapter import LayaAdapter
     from scoring.agreement import majority_baseline, score_agreement
 
-    cases = [
-        json.loads(line)
-        for line in CACHE.read_text(encoding="utf-8").splitlines()
-        if line
-    ]
+    cases, current_sha = load_verified_cases(CACHE, LOCK_FILE)
+    jevmlx_manifest = read_jevmlx_manifest(JEVMLX_REPORT, JEVMLX_MANIFEST)
+    hosted_jev_sha = HOSTED_JEV_LOCK_SHA.read_text(encoding="utf-8").strip() if HOSTED_JEV_LOCK_SHA.exists() else None
+    if HOSTED_JEV_PREDICTIONS.exists() and hosted_jev_sha is None:
+        sys.exit("results/hosted_jev: missing dataset lock digest; rerun hosted Jev")
+    assert_dataset_identity(jevmlx_manifest, hosted_jev_sha, current_sha)
 
     adapter = LayaAdapter()
     predictions = [adapter.predict_case(case) for case in cases]

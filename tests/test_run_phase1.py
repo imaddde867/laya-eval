@@ -1,7 +1,60 @@
 import sys
+import hashlib
+import json
 from pathlib import Path
+import pytest
 
-from scripts.run_phase1 import ensure_project_root_on_path, format_report, sample_counts
+from scripts.run_phase1 import (
+    assert_dataset_identity, ensure_project_root_on_path, format_report,
+    load_verified_cases, read_jevmlx_manifest, sample_counts,
+)
+
+
+def test_read_jevmlx_manifest_rejects_missing_provenance(tmp_path):
+    report = tmp_path / "report.json"
+    report.write_text("{}")
+    with pytest.raises(SystemExit, match="manifest"):
+        read_jevmlx_manifest(report, tmp_path / "manifest.json")
+
+
+def test_load_verified_cases_rejects_cache_modified_without_lock(tmp_path):
+    cases_path = tmp_path / "cases.jsonl"
+    lock_path = tmp_path / "dataset.lock.json"
+    original = b'{"id":"c1"}\n'
+    cases_path.write_bytes(original)
+    lock_path.write_text(json.dumps({"cases_sha256": hashlib.sha256(original).hexdigest()}))
+    cases_path.write_bytes(b'{"id":"changed"}\n')
+    with pytest.raises(SystemExit, match="cases.jsonl"):
+        load_verified_cases(cases_path, lock_path)
+
+
+def test_load_verified_cases_returns_verified_cases_and_lock_digest(tmp_path):
+    cases_path = tmp_path / "cases.jsonl"
+    lock_path = tmp_path / "dataset.lock.json"
+    raw = b'{"id":"c1"}\n'
+    cases_path.write_bytes(raw)
+    lock_path.write_text(json.dumps({"cases_sha256": hashlib.sha256(raw).hexdigest()}))
+    cases, lock_sha = load_verified_cases(cases_path, lock_path)
+    assert cases == [{"id": "c1"}]
+    assert lock_sha == hashlib.sha256(lock_path.read_bytes()).hexdigest()
+
+
+def test_assert_dataset_identity_accepts_matching_artifacts():
+    assert_dataset_identity({"dataset_lock_sha256": "abc"}, "abc", "abc")
+
+
+def test_assert_dataset_identity_rejects_stale_jevmlx():
+    with pytest.raises(SystemExit, match="jevmlx_baseline"):
+        assert_dataset_identity({"dataset_lock_sha256": "stale"}, "abc", "abc")
+
+
+def test_assert_dataset_identity_rejects_stale_hosted_jev():
+    with pytest.raises(SystemExit, match="hosted_jev"):
+        assert_dataset_identity({"dataset_lock_sha256": "abc"}, "stale", "abc")
+
+
+def test_assert_dataset_identity_accepts_absent_optional_artifacts():
+    assert_dataset_identity(None, None, "abc")
 
 
 def test_direct_script_bootstrap_adds_project_root(monkeypatch):
@@ -61,6 +114,8 @@ def test_report_reads_nested_jevmlx_agreement_and_states_context_limit():
         },
         total_unmapped=0,
         jevmlx_agreement={"overall": 0.75, "n_cases": 2, "n_fields": 4},
+        hosted_jev_agreement={"overall": 0.8, "n_cases": 2, "n_fields": 3, "by_workflow": {}},
+        baseline={"overall": 0.6, "n_fields": 3, "by_workflow": {}},
         jev_row={"accuracy": 0.678},
         model_max_len=1024,
         official_retrieved="2026-09-17",
@@ -70,9 +125,34 @@ def test_report_reads_nested_jevmlx_agreement_and_states_context_limit():
     assert "Overall agreement with consensus: 0.667 (2 cases, 3 fields)" in report
     assert "Non-ambiguous agreement with consensus: 1.000 (2 cases, 2 fields)" in report
     assert "jevmlx local agreement on the fetched dataset: 0.750 (2 cases, 4 fields)" in report
-    assert "TypeSafe cited hosted Jev (private eval; n not reported): 0.678" in report
+    assert "Hosted Jev (our own run, jev-latest / TypeSafe /v1/systemone, same cases/scorer): 0.800 (2 cases, 3 fields)" in report
+    assert "Leave-one-out majority-label baseline (guess floor, not a model): 0.600 (3 fields)" in report
+    assert "TypeSafe cited hosted Jev (their private eval; n not reported): 0.678" in report
     assert "wf_a: 0.667 (2 cases, 3 fields)" in report
     assert "wf_a / urgent: 1.000 (2 cases, 2 fields)" in report
     assert "1,024-token model input limit." in report
     assert "laya-mlx truncates state tokens" in report
     assert "confidence values are not evaluated" in report
+
+
+def test_report_handles_missing_hosted_jev_and_baseline():
+    report = format_report(
+        result={
+            "n_input_cases": 1, "n_cases": 1, "n_fields": 1, "overall": 1.0,
+            "n_common_cases": 1, "n_common_fields": 1, "common_subset": 1.0,
+            "by_workflow": {"wf_a": 1.0},
+            "by_workflow_counts": {"wf_a": {"n_cases": 1, "n_fields": 1}},
+            "by_workflow_field": {"wf_a": {"urgent": {"agreement": 1.0, "n_cases": 1, "n_fields": 1}}},
+        },
+        total_unmapped=0,
+        jevmlx_agreement={},
+        hosted_jev_agreement=None,
+        baseline={"overall": None, "n_fields": 0, "by_workflow": {}},
+        jev_row={},
+        model_max_len=1024,
+        official_retrieved="2026-09-17",
+    )
+    assert "jevmlx local agreement on the fetched dataset: not available" in report
+    assert "Hosted Jev (our own run): not available" in report
+    assert "Leave-one-out majority-label baseline" not in report
+    assert "TypeSafe cited hosted Jev (their private eval; n not reported): not available" in report
