@@ -82,7 +82,7 @@ mapping gap doesn't bite on this dataset.
   `feat/position-laya-probe`): 6 messages x 3 orders x 2 passes, 2 of 6
   answers changed with option order when descriptions were kept, 0 of 6 when
   blanked. Exploratory (n=6, no ground truth); raw records gitignored under
-  `results/position_laya/`. Phase 3 stays open until the hosted-Jev leg is
-  settled (see `PLAN.md`).
+  `results/position_laya/`. Hosted Jev (2026-10-03 rerun): 0 of 6 changed.
+  Phase 3 is done; see `PLAN.md`.
 - Phase 2 (latency/throughput) and Phase 4 remain unplanned. Use the design
   and claim boundaries in `design.md` before planning Phase 2.

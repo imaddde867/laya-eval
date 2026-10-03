@@ -88,7 +88,7 @@ Phase 1: `docs/superpowers/plans/2026-09-27-laya-phase1-agreement.md`.
       Full table in `results/laya_phase1/report.md`'s "Weighting
       sensitivity" section.
 - [ ] Phase 2 — Latency/throughput on M4 (laya-mlx vs. jevmlx, local only)
-- [ ] Phase 3 — Option-order robustness (repeat jev-position-test method;
+- [x] Phase 3 — Option-order robustness (repeat jev-position-test method;
       hosted-Jev leg now unblocked — same `TYPESAFE_API_KEY` already in
       use for the Phase 1 hosted run, `.env` at repo root, gitignored)
   - Laya `choice` probe done (2026-10-03, `scripts/run_position_laya.py`,
@@ -98,6 +98,14 @@ Phase 1: `docs/superpowers/plans/2026-09-27-laya-phase1-agreement.md`.
     tilt with descriptions: last-listed option gained in 11/12 pairs
     (+0.074 avg). Probe only (n=6, no ground truth); records gitignored
     under `results/position_laya/`.
+  - Hosted-Jev leg done (2026-10-03, `../jev-position-test/jev_hosted_position.py`,
+    model alias `jev-latest`, 36 calls): 0 of 6 answers changed with option
+    order over two passes, same as the 2026-09-20 run (jev-1.13.0). Confidence
+    moved slightly with order (e.g. mild_concern 0.51-0.68); same-order
+    repeats differ by up to 0.05. Raw file:
+    `../jev-position-test/results/exp6_results_20261003T154421Z.json`. The
+    alias does not pin a version. Laya (2 of 6 flips with descriptions) is
+    less order-stable than hosted Jev on this probe; n=6, no ground truth.
   - Open question resolved (checked 2026-10-03,
     `scripts/check_enum_descriptions.py`): fetched TypeSafe schemas carry no
     per-option descriptions (all 135 enum fields, in the 44 cases that have
